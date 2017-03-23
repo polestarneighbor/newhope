@@ -3,16 +3,16 @@ class Polynomial:
     degree=1024
     mod=12289
     def __init__(self, sizelimit=mod//2):
-        self.__coeffs=[random.randint(-b,b)%mod for x in range(degree)]
+        self.__coeffs=[random.randint(-b,b)%Polynomial.mod for x in range(Polynomial.degree)]
     def __init__(self, coeffs=None):
         if coeffs is None:
             coeffs=[]
         self.__coeffs=coeffs
-        while len(self.__coeffs)<degree:
+        while len(self.__coeffs)<Polynomial.degree:
             self.__coeffs.append(0)
         i=0
         while i<len(self.__coeffs):
-            self.__coeffs[i] %=mod
+            self.__coeffs[i] %=Polynomial.mod
     def coeff_to_byte(x):
         firstbyte=x//256
         secondbyte=x%256
