@@ -5,7 +5,7 @@ class Polynomial:
     def __init__(self, sizelimit=mod//2):
         self.__coeffs=[random.randint(-b,b)%mod for x in range(degree)]
     def __init__(self, coeffs=None)
-        if coeffs == None:
+        if coeffs is None:
             coeffs=[]
         self.__coeffs=coeffs
         while len(self.__coeffs)<degree:
