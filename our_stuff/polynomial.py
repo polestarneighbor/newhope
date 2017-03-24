@@ -52,9 +52,6 @@ class Polynomial:
     def mod2(self,sig):
         return [ (self.__coeffs[i]+sig.__coeffs[i]*sig.mod/2)%self.mod %2 for i in range(self.degree)]
 
-    def reconcile(v,w):
-        v+=(w*(q-1)/2).mod2()
-
 class Authority():
     def __init__(self, clientA=None, clientB=None):
         self.a=Polynomial()
