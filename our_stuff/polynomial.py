@@ -35,8 +35,11 @@ class Polynomial:
         c=[(self.__coeffs[i]+other.__coeffs[i])%self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c,mod=self.mod,degree=self.degree)
     def __mul__(self,other):
-        #FIXME implement this please
-        return Polynomial()
+        c = [0]*(self.degree+other.degree-1)#least significant on the left
+        for i in range(len(other.__coeffs)):
+            x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
+            c += x
+        return Polynomial(coeffs=c,mod=self.mod,degree=self.degree)
     def signal(self):
         info_bits=[]
         for coeff in self.__coeffs:
