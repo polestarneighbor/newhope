@@ -9,14 +9,14 @@ class Polynomial:
             sizelimit = mod//2
 
         if sizelimit == 0:
-            while len(self.__coeffs)<Polynomial.degree:
+            while len(self.__coeffs)<degree:
                 self.__coeffs.append(0)
         else:
-            while len(self.__coeffs)<Polynomial.degree:
-                self.__coeffs.append(random.randint(-sizelimit,sizelimit)%Polynomial.mod)
+            while len(self.__coeffs)<degree:
+                self.__coeffs.append(random.randint(-sizelimit,sizelimit)%mod)
                 
         for index  in range(len(self.__coeffs)):
-            self.__coeffs[index] %=Polynomial.mod
+            self.__coeffs[index] %=mod
 
     def coeff_to_byte(x):
         firstbyte=x//256
