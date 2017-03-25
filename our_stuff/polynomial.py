@@ -1,4 +1,13 @@
+# ######################################################################################################################
+# Imports
+# ######################################################################################################################
+from collections import defaultdict
 import random
+
+
+# ######################################################################################################################
+# Class Definitions
+# ######################################################################################################################
 class Polynomial:
     def __init__(self, coeffs=None, sizelimit=None, degree=1024, mod=12289):
         if coeffs is None:
@@ -19,8 +28,14 @@ class Polynomial:
             self.__coeffs[index] %=mod
         self.mod=mod
         self.degree=degree
+
     def __repr__(self):
-        print(self.__coeffs)
+        return self.__coeffs
+
+    @property
+    def coeffs(self):
+        return self.__coeffs
+
     def coeff_to_byte(x):
         firstbyte=x//256
         secondbyte=x%256
@@ -31,15 +46,18 @@ class Polynomial:
         for coeff in self.__coeffs:
             sequence+=Polynomial.coeff_to_byte(coeff)
         return bytes(sequence)
+
     def __add__(self,other):
         c=[(self.__coeffs[i]+other.__coeffs[i])%self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c,mod=self.mod,degree=self.degree)
+
     def __mul__(self,other):
         c = [0]*(self.degree+other.degree-1)#least significant on the left
         for i in range(len(other.__coeffs)):
             x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
             c += x
         return Polynomial(coeffs=c,mod=self.mod,degree=self.degree)
+
     def signal(self):
         info_bits=[]
         for coeff in self.__coeffs:
@@ -52,34 +70,71 @@ class Polynomial:
     def mod2(self,sig):
         return [ (self.__coeffs[i]+sig.__coeffs[i]*sig.mod/2)%self.mod %2 for i in range(self.degree)]
 
-class Authority():
-    def __init__(self, clientA=None, clientB=None):
+
+class Authority:
+    def __init__(self, clientA=None, clientB=None, degree=1024, mod=12289):
         self.a=Polynomial()
         if clientA is None:
-            self.clientA=KeyExchanger()
+            self.clientA=KeyExchanger(degree=1024, mod=12289)
         else:
             self.clientA=clientA
         if clientB is None:
-            self.clientB=KeyExchanger()
+            self.clientB=KeyExchanger(degree=1024, mod=12289)
         else:
             self.clientB=clientB
+
     def runExchange(self):
         pA=self.clientA.sendP(self.a)
         sig, pB = self.clientB.key_and_signal(self.a,pA)
-        self.clientA.key_and_signal(self.a,pB)
+        self.clientA.key_and_signal(self.a,pB,sig)
+
     def checkExchange(self):
         print(self.clientA.key)
         print(self.clientB.key)
 
-class KeyExchanger():
-    def __init__(self):
-        self.secret=Polynomial(sizelimit=12889//4)
-        self.error=Polynomial(sizelimit=12889//4)
+
+class KeyExchanger:
+    def __init__(self, degree=1024, mod=12289):
+        self.secret=Polynomial(sizelimit=mod//4, degree=1024, mod=12289)
+        self.error=Polynomial(sizelimit=mod//4, degree=1024, mod=12289)
         self.key=None
+
     def sendP(self,a):
-         return self.secret*a+self.error
+        return self.secret*a+self.error
 
     def key_and_signal(self,a,p,signal=None):
+        poly=self.secret*p
+        if signal is None:
+            signal=poly.signal()
+        self.key=poly.mod2(signal)
+        return signal, self.secret*a+self.error
+
+
+class Adversary:
+    def __init__(self, degree=1024, mod=12289):
+        self.mod = mod
+        self.degree = degree
+        self.ks = range(self.mod)
+        self.secret = Polynomial(sizelimit=mod // 4, degree=1024, mod=12289)
+        self.error = 1
+        self.key=None
+        self.signal_values = [None] * degree
+        self.signal_changes = defaultdict(lambda: 0)
+
+    def sendP(self,a):
+        for k in self.ks:
+            yield k * self.error
+
+    def key_and_signal(self,a,p,signal=None):
+        if signal is not None:
+            for coeff_index in range(len(signal.coeffs)):
+                if self.signal_values[coeff_index] is None:
+                    self.signal_values[coeff_index] = signal.coeffs[coeff_index]
+                else:
+                    if self.signal_values[coeff_index] != signal.coeffs[coeff_index]:
+                        self.signal_values[coeff_index] = signal.coeffs[coeff_index]
+                        self.signal_changes[coeff_index] += 1
+
         poly=self.secret*p
         if signal is None:
             signal=poly.signal()
