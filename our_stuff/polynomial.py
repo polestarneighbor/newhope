@@ -55,7 +55,8 @@ class Polynomial:
         c = [0]*(self.degree+other.degree-1)  # least significant on the left
         for i in range(len(other.__coeffs)):
             x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
-            c += x
+            for xi in range(len(x)):
+                c[xi] += x[xi]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
 
     def signal(self):
