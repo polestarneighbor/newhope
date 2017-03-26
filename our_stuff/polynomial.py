@@ -21,7 +21,7 @@ class Polynomial:
             while len(self.__coeffs) < degree:
                 self.__coeffs.append(0)
         else:
-            while len(self.__coeffs)<degree:
+            while len(self.__coeffs) < degree:
                 self.__coeffs.append(random.randint(-sizelimit, sizelimit) % mod)
 
         for index in range(len(self.__coeffs)):
@@ -48,16 +48,21 @@ class Polynomial:
         return bytes(sequence)
 
     def __add__(self, other):
-        c = [(self.__coeffs[i]+other.__coeffs[i])%self.mod for i in range(self.degree)]
+        c = [(self.__coeffs[i]+other.__coeffs[i]) % self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
 
     def __mul__(self, other):
-        c = [0]*(self.degree+other.degree-1)  # least significant on the left
-        for i in range(len(other.__coeffs)):
-            x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
-            for xi in range(len(x)):
-                c[xi] += x[xi]
-        return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
+        if type(other) == Polynomial:
+            c = [0]*(self.degree+other.degree-1)  # least significant on the left
+            for i in range(len(other.__coeffs)):
+                x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
+                for xi in range(len(x)):
+                    c[xi] += x[xi]
+            return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
+        else:
+            for i in range(len(self.__coeffs)):
+                self.__coeffs[i] *= other
+            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)
 
     def signal(self):
         info_bits = []
@@ -115,16 +120,16 @@ class Adversary:
     def __init__(self, degree=1024, mod=12289):
         self.mod = mod
         self.degree = degree
-        self.ks = range(self.mod)
-        self.secret = Polynomial(sizelimit=mod // 4, degree=1024, mod=12289)
-        self.error = 1
+        self.k = 0
+        self.secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
+        self.error = Polynomial(coeffs=[1]*degree, degree=degree, mod=1)
         self.key=None
-        self.signal_values = [None] * degree
+        self.signal_values = defaultdict(lambda: None)
         self.signal_changes = defaultdict(lambda: 0)
 
     def sendP(self, a):
-        for k in self.ks:
-            yield k * self.error
+        self.k += 1
+        return self.error * (self.k - 1)
 
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
