@@ -58,11 +58,23 @@ class Polynomial:
                 x = [0]*i+[y*other.__coeffs[i] for y in self.__coeffs]
                 for xi in range(len(x)):
                     c[xi] += x[xi]
+            if len(c)>=self.degree:
+                for j in range(len(c)-1, -1, self.degree-1):
+                    c[j-self.degree] += c[j]
+                del c[self.degree:len(c)]
+            truncate = True# see 3 lines below
+            for i in c:
+                c[i] = c[i]%self.mod#mods each coefficent by modulus
+                if c[i] == 0 and truncate:#truncates extra 0's if we want it to
+                    del c[i]
+                elif c[i] != 0:
+                    truncate = False
             return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
         else:
             for i in range(len(self.__coeffs)):
                 self.__coeffs[i] *= other
-            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)
+                self.__coeffs[i] % self.mod
+            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)        
 
     def signal(self):
         info_bits = []
