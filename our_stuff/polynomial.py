@@ -140,14 +140,29 @@ class Adversary:
         self.signal_values = defaultdict(lambda: None)
         self.signal_changes = defaultdict(lambda: 0)
         self.preys_key = None
-        self._step = self._attack_step_1()
+        self._attack_steps = self._attack_steps()
+        self._attack_complete = False
 
     def sendP(self, a):
-        return self._step.__next__()
+        try:
+            return self._attack_steps.__next__()
+        except StopIteration:
+            self._attack_complete = True
+            return self._normal_sendP(a)
+
+    def _attack_steps(self):
+        step1 = self._attack_step_1()
+        try:
+            return step1.__next__()
+        except StopIteration:
+            raise StopIteration
 
     def _attack_step_1(self):
         for k in range(self.mod):
             yield self.error * k
+
+    def _normal_sendP(self, a):
+        self.secret * a + self.error
 
     def _interpret_signal_changes(self):
         self.preys_key = []
@@ -155,7 +170,6 @@ class Adversary:
         keys.sort()
         for key in keys:
             self.preys_key.append(self.signal_changes[key]//2)
-
 
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
