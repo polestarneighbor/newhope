@@ -62,9 +62,9 @@ class Polynomial:
                 for j in range(len(c)-1, -1, self.degree-1):
                     c[j-self.degree] += c[j]
                 del c[self.degree:len(c)]
-            truncate = None# Marks the start of the leading zeros
+            truncate = None  # Marks the start of the leading zeros
             for i in range(len(c)):
-                c[i] = c[i]%self.mod#mods each coefficent by modulus
+                c[i] %= self.mod  # mods each coefficent by modulus
                 if c[i] == 0:
                     truncate = i
                 elif c[i] != 0:
