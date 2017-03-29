@@ -32,6 +32,12 @@ class Polynomial:
     def __repr__(self):
         return self.__coeffs
 
+    def __str__(self):
+        coeff_strings = []
+        for coeff_number in range(len(self.coeffs)):
+            coeff_strings.append(str(self.coeffs[coeff_number]) + "X^" + str(coeff_number))
+        return " + ".join(coeff_strings)
+
     @property
     def coeffs(self):
         return self.__coeffs
