@@ -134,16 +134,28 @@ class Adversary:
     def __init__(self, degree=1024, mod=12289):
         self.mod = mod
         self.degree = degree
-        self.k = 0
         self.secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
         self.error = Polynomial(coeffs=[1]*degree, degree=degree, mod=1)
-        self.key=None
+        self.key = None
         self.signal_values = defaultdict(lambda: None)
         self.signal_changes = defaultdict(lambda: 0)
+        self.preys_key = None
+        self._step = self._attack_step_1()
 
     def sendP(self, a):
-        self.k += 1
-        return self.error * (self.k - 1)
+        return self._step.__next__()
+
+    def _attack_step_1(self):
+        for k in range(self.mod):
+            yield self.error * k
+
+    def _interpret_signal_changes(self):
+        self.preys_key = []
+        keys = list(self.signal_values.keys())
+        keys.sort()
+        for key in keys:
+            self.preys_key.append(self.signal_changes[key]//2)
+
 
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
