@@ -145,7 +145,8 @@ class Adversary:
         self.key = None
         self.signal_values = defaultdict(lambda: None)
         self.signal_changes = defaultdict(lambda: 0)
-        self.preys_key = None
+        self.preys_coefficients_step1 = None
+        self.preys_coefficients_step2 = None
         self._attack_steps = self._attack_steps()
         self._attack_complete = False
 
@@ -159,10 +160,10 @@ class Adversary:
     def _attack_steps(self):
         for p in self._attack_step_1():
             yield p
-        self._interpret_signal_changes()
+        self.preys_coefficients_step1 = self._interpret_signal_changes()
         for p in self._attack_step_2():
             yield p
-        self._interpret_signal_changes()
+        self.preys_coefficients_step2 = self._interpret_signal_changes()
         raise StopIteration
 
     def _attack_step_1(self):
@@ -170,13 +171,14 @@ class Adversary:
             yield self.error * k
 
     def _interpret_signal_changes(self):
-        self.preys_key = []
+        results = []
         keys = list(self.signal_values.keys())
         keys.sort()
         for key in keys:
-            self.preys_key.append(self.signal_changes[key]//2)
+            results.append(self.signal_changes[key]//2)
         self.signal_values = defaultdict(lambda: None)
         self.signal_changes = defaultdict(lambda: 0)
+        return results
 
     def _attack_step_2(self):
         poly_const = Polynomial([1, 1], degree=2, mod=1)
