@@ -154,21 +154,20 @@ class Adversary:
             return self._attack_steps.__next__()
         except StopIteration:
             self._attack_complete = True
-            return self._normal_sendP(a)
+            raise StopIteration
 
     def _attack_steps(self):
-        step1 = self._attack_step_1()
-        try:
-            return step1.__next__()
-        except StopIteration:
-            raise StopIteration
+        for p in self._attack_step_1():
+            yield p
+        self._interpret_signal_changes()
+        for p in self._attack_step_2():
+            yield p
+        self._interpret_signal_changes()
+        raise StopIteration
 
     def _attack_step_1(self):
         for k in range(self.mod):
             yield self.error * k
-
-    def _normal_sendP(self, a):
-        self.secret * a + self.error
 
     def _interpret_signal_changes(self):
         self.preys_key = []
@@ -176,6 +175,13 @@ class Adversary:
         keys.sort()
         for key in keys:
             self.preys_key.append(self.signal_changes[key]//2)
+        self.signal_values = defaultdict(lambda: None)
+        self.signal_changes = defaultdict(lambda: 0)
+
+    def _attack_step_2(self):
+        poly_const = Polynomial([1, 1], degree=2, mod=1)
+        for k in range(self.mod):
+            yield poly_const * k
 
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
