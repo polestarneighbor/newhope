@@ -143,10 +143,11 @@ class Adversary:
         self.secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
         self.error = Polynomial(coeffs=[1]*degree, degree=degree, mod=1)
         self.key = None
-        self.signal_values = defaultdict(lambda: None)
-        self.signal_changes = defaultdict(lambda: 0)
-        self.preys_coefficients_step1 = None
-        self.preys_coefficients_step2 = None
+        self.signal_values = [None] * degree
+        self.signal_changes = [0] * degree
+        self._coefficients_step1 = None
+        self._coefficients_step2 = None
+        self._same_signs_step3 = None
         self._attack_steps = self._attack_steps()
         self._attack_complete = False
 
@@ -160,10 +161,11 @@ class Adversary:
     def _attack_steps(self):
         for p in self._attack_step_1():
             yield p
-        self.preys_coefficients_step1 = self._interpret_signal_changes()
+        self._coefficients_step1 = self._interpret_signal_changes()
         for p in self._attack_step_2():
             yield p
-        self.preys_coefficients_step2 = self._interpret_signal_changes()
+        self._coefficients_step2 = self._interpret_signal_changes()
+        self._attack_step_3()
         raise StopIteration
 
     def _attack_step_1(self):
@@ -172,18 +174,28 @@ class Adversary:
 
     def _interpret_signal_changes(self):
         results = []
-        keys = list(self.signal_values.keys())
-        keys.sort()
-        for key in keys:
-            results.append(self.signal_changes[key]//2)
-        self.signal_values = defaultdict(lambda: None)
-        self.signal_changes = defaultdict(lambda: 0)
+        for i in range(len(self.signal_values)):
+            results.append(self.signal_changes[i]//2)
+        self.signal_values = [None] * self.degree
+        self.signal_changes = [0] * self.degree
         return results
 
     def _attack_step_2(self):
         poly_const = Polynomial([1, 1], degree=2, mod=1)
         for k in range(self.mod):
             yield poly_const * k
+
+    # Determine if things have the same or different sign
+    def _attack_step_3(self):
+        self._same_signs_step3 = [True] * self.degree
+        # First pair
+        self._same_signs_step3[0] = True if self._coefficients_step2[0] != \
+                                            self._coefficients_step1[0] + self._coefficients_step1[-1] else False
+
+        # Remaining pairs
+        for i in range(0, len(self._coefficients_step1)-1):
+            self._same_signs_step3[i+1] = True if self._coefficients_step1[i] == \
+                                                  self._coefficients_step1[i] + self._coefficients_step1[i+1] else False
 
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
