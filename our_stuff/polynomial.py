@@ -2,6 +2,7 @@
 # Imports
 # ######################################################################################################################
 from collections import defaultdict
+import operator
 import random
 
 
@@ -143,7 +144,8 @@ class Adversary:
         self._accounting_for_errors = accounting_for_errors
         self._secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
         self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=1)
-        self._key = None
+        self._private_key = None
+        self._public_key = None
         self._signal_values = defaultdict(lambda: [])
         self._coefficients_step1 = None
         self._coefficients_step2 = None
@@ -173,7 +175,7 @@ class Adversary:
         self._attack_step_3()
         # Step 4 is just step 3, but for all coefficients, so step 3 was simplified to everything
         # Step 5 should check the distribution to see if it is right, but whatever for now.
-        self._guess = self._attack_step_5(True)
+        self._guess = self._attack_step_5()
         raise StopIteration
 
     def _attack_step_1(self):
@@ -241,24 +243,35 @@ class Adversary:
             self._same_signs_step3[i+1] = True if self._coefficients_step1[i] == \
                                                   self._coefficients_step1[i] + self._coefficients_step1[i+1] else False
 
-    def _attack_step_5(self, first_coefficient_positive):
+    def _attack_step_5(self):
         def create_guess():
-            if first_coefficient_positive:
-                coefficients = [self._coefficients_step1[0]]
-            else:
-                coefficients = [-self._coefficients_step1[0]]
+            coefficients = []
+            for coefficient_number in self._coefficients_step1:
+                coefficients.append(self._coefficients_step1[coefficient_number])
 
-            for coefficient_number in range(1, len(self._coefficients_step1)):
+            for coefficient_number in range(len(self._coefficients_step1)):
+                # Set prior coefficient
                 if self._same_signs_step3[coefficient_number]:
-                    if coefficients[coefficient_number - 1] < 0:
-                        coefficients.append(-self._coefficients_step1[coefficient_number])
-                    else:
-                        coefficients.append(self._coefficients_step1[coefficient_number])
+                    comparison = operator.lt
                 else:
-                    if coefficients[coefficient_number - 1] < 0:
-                        coefficients.append(self._coefficients_step1[coefficient_number])
-                    else:
-                        coefficients.append(-self._coefficients_step1[coefficient_number])
+                    comparison = operator.gt
+
+                if comparison(coefficients[coefficient_number], 0):
+                    coefficients.append(-self._coefficients_step1[coefficient_number-1])
+                else:
+                    coefficients.append(self._coefficients_step1[coefficient_number-1])
+
+                # Set next coefficient
+                if self._same_signs_step3[coefficient_number+1]:
+                    comparison = operator.lt
+                else:
+                    comparison = operator.gt
+
+                index = (coefficient_number + 1) % len(self._coefficients_step1)
+                if comparison(coefficients[coefficient_number], 0):
+                    coefficients.append(-self._coefficients_step1[index])
+                else:
+                    coefficients.append(self._coefficients_step1[index])
             return coefficients
 
         def test_guess(guess):
@@ -281,5 +294,5 @@ class Adversary:
         poly = self._secret * p
         if signal is None:
             signal = poly.signal()
-        self._key = poly.mod2(signal)
+        self._private_key = poly.mod2(signal)
         return poly.signal(), self._secret * a + self._error
