@@ -137,9 +137,10 @@ class KeyExchanger:
 
 
 class Adversary:
-    def __init__(self, degree=1024, mod=12289):
+    def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
         self._mod = mod
         self._degree = degree
+        self._accounting_for_errors = accounting_for_errors
         self._secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
         self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=1)
         self._key = None
@@ -180,7 +181,7 @@ class Adversary:
             yield self._error * k
 
     def _interpret_signal_changes(self):
-        def logic(list_of_changes):
+        def basic_logic(list_of_changes):
             if len(list_of_changes) == 0:
                 return 0
             value = list_of_changes[0]
@@ -191,11 +192,35 @@ class Adversary:
                     number_of_changes += 1
             return number_of_changes // 2
 
+        def error_accounting_logic(list_of_changes):
+            if len(list_of_changes) == 0:
+                return 0
+            value = list_of_changes[0]
+            number_of_changes = 0
+            changes_in_a_row = 0
+            for change in list_of_changes[1:]:
+                if value != change:
+                    value = change
+                    changes_in_a_row += 1
+                    if changes_in_a_row == 3:
+                        number_of_changes += 1
+                        changes_in_a_row = 0
+                else:
+                    if changes_in_a_row == 1:
+                        number_of_changes += 1
+                        changes_in_a_row = 0
+                    elif changes_in_a_row == 2:
+                        changes_in_a_row = 0
+            return number_of_changes // 2
+
         results = []
         cooeficients = list(self._signal_values.keys())
         cooeficients.sort()
         for cooeficient in cooeficients:
-            results.append(logic(self._signal_values[cooeficient]))
+            if not self._accounting_for_errors:
+                results.append(basic_logic(self._signal_values[cooeficient]))
+            else:
+                results.append(error_accounting_logic(self._signal_values[cooeficient]))
         self.signal_values = defaultdict(lambda: [])
         return results
 
