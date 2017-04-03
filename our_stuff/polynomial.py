@@ -138,17 +138,22 @@ class KeyExchanger:
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289):
-        self.mod = mod
-        self.degree = degree
-        self.secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
-        self.error = Polynomial(coeffs=[1]*degree, degree=degree, mod=1)
-        self.key = None
+        self._mod = mod
+        self._degree = degree
+        self._secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
+        self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=1)
+        self._key = None
         self._signal_values = defaultdict(lambda: [])
         self._coefficients_step1 = None
         self._coefficients_step2 = None
         self._same_signs_step3 = None
         self._attack_steps = self._attack_steps()
         self._attack_complete = False
+        self._guess = None
+
+    @property
+    def guess(self):
+        return self._guess
 
     def sendP(self, a):
         try:
@@ -165,11 +170,14 @@ class Adversary:
             yield p
         self._coefficients_step2 = self._interpret_signal_changes()
         self._attack_step_3()
+        # Step 4 is just step 3, but for all coefficients, so step 3 was simplified to everything
+        # Step 5 should check the distribution to see if it is right, but whatever for now.
+        self._guess = self._attack_step_5(True)
         raise StopIteration
 
     def _attack_step_1(self):
-        for k in range(self.mod):
-            yield self.error * k
+        for k in range(self._mod):
+            yield self._error * k
 
     def _interpret_signal_changes(self):
         def logic(list_of_changes):
@@ -193,12 +201,12 @@ class Adversary:
 
     def _attack_step_2(self):
         poly_const = Polynomial([1, 1], degree=2, mod=1)
-        for k in range(self.mod):
+        for k in range(self._mod):
             yield poly_const * k
 
     # Determine if things have the same or different sign
     def _attack_step_3(self):
-        self._same_signs_step3 = [True] * self.degree
+        self._same_signs_step3 = [True] * self._degree
         # First pair
         self._same_signs_step3[0] = True if self._coefficients_step2[0] != \
                                             self._coefficients_step1[0] + self._coefficients_step1[-1] else False
@@ -208,13 +216,45 @@ class Adversary:
             self._same_signs_step3[i+1] = True if self._coefficients_step1[i] == \
                                                   self._coefficients_step1[i] + self._coefficients_step1[i+1] else False
 
+    def _attack_step_5(self, first_coefficient_positive):
+        def create_guess():
+            if first_coefficient_positive:
+                coefficients = [self._coefficients_step1[0]]
+            else:
+                coefficients = [-self._coefficients_step1[0]]
+
+            for coefficient_number in range(1, len(self._coefficients_step1)):
+                if self._same_signs_step3[coefficient_number]:
+                    if coefficients[coefficient_number - 1] < 0:
+                        coefficients.append(-self._coefficients_step1[coefficient_number])
+                    else:
+                        coefficients.append(self._coefficients_step1[coefficient_number])
+                else:
+                    if coefficients[coefficient_number - 1] < 0:
+                        coefficients.append(self._coefficients_step1[coefficient_number])
+                    else:
+                        coefficients.append(-self._coefficients_step1[coefficient_number])
+            return coefficients
+
+        def test_guess(guess):
+            return False
+
+        coefficients = create_guess()
+        guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
+        if test_guess(guess):
+            return guess
+        else:
+            for coefficient_number in range(len(coefficients)):
+                coefficients[coefficient_number] = -coefficients[coefficient_number]
+            return Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
+
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
             for coeff_index in range(len(signal.coeffs)):
                 self._signal_values[coeff_index].append(signal.coeffs[coeff_index])
 
-        poly = self.secret*p
+        poly = self._secret * p
         if signal is None:
             signal = poly.signal()
-        self.key = poly.mod2(signal)
-        return poly.signal(), self.secret*a+self.error
+        self._key = poly.mod2(signal)
+        return poly.signal(), self._secret * a + self._error
