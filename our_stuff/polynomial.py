@@ -143,8 +143,7 @@ class Adversary:
         self.secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
         self.error = Polynomial(coeffs=[1]*degree, degree=degree, mod=1)
         self.key = None
-        self.signal_values = [None] * degree
-        self.signal_changes = [0] * degree
+        self._signal_values = defaultdict(lambda: [])
         self._coefficients_step1 = None
         self._coefficients_step2 = None
         self._same_signs_step3 = None
@@ -173,11 +172,23 @@ class Adversary:
             yield self.error * k
 
     def _interpret_signal_changes(self):
+        def logic(list_of_changes):
+            if len(list_of_changes) == 0:
+                return 0
+            value = list_of_changes[0]
+            number_of_changes = 0
+            for change in list_of_changes[1:]:
+                if value != change:
+                    value = change
+                    number_of_changes += 1
+            return number_of_changes // 2
+
         results = []
-        for i in range(len(self.signal_values)):
-            results.append(self.signal_changes[i]//2)
-        self.signal_values = [None] * self.degree
-        self.signal_changes = [0] * self.degree
+        cooeficients = list(self._signal_values.keys())
+        cooeficients.sort()
+        for cooeficient in cooeficients:
+            results.append(logic(self._signal_values[cooeficient]))
+        self.signal_values = defaultdict(lambda: [])
         return results
 
     def _attack_step_2(self):
@@ -200,12 +211,7 @@ class Adversary:
     def key_and_signal(self, a, p, signal=None):
         if signal is not None:
             for coeff_index in range(len(signal.coeffs)):
-                if self.signal_values[coeff_index] is None:
-                    self.signal_values[coeff_index] = signal.coeffs[coeff_index]
-                else:
-                    if self.signal_values[coeff_index] != signal.coeffs[coeff_index]:
-                        self.signal_values[coeff_index] = signal.coeffs[coeff_index]
-                        self.signal_changes[coeff_index] += 1
+                self._signal_values[coeff_index].append(signal.coeffs[coeff_index])
 
         poly = self.secret*p
         if signal is None:
