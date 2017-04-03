@@ -146,6 +146,7 @@ class Adversary:
         self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=1)
         self._private_key = None
         self._public_key = None
+        self._a = None
         self._signal_values = defaultdict(lambda: [])
         self._coefficients_step1 = None
         self._coefficients_step2 = None
@@ -159,6 +160,7 @@ class Adversary:
         return self._guess
 
     def sendP(self, a):
+        self._a = a
         try:
             return self._attack_steps.__next__()
         except StopIteration:
@@ -275,6 +277,8 @@ class Adversary:
             return coefficients
 
         def test_guess(guess):
+            test = self._public_key - (self._a * self._public_key)
+            # Test distribution of guess and test
             return False
 
         coefficients = create_guess()
@@ -287,6 +291,7 @@ class Adversary:
             return Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
 
     def key_and_signal(self, a, p, signal=None):
+        self._public_key = p
         if signal is not None:
             for coeff_index in range(len(signal.coeffs)):
                 self._signal_values[coeff_index].append(signal.coeffs[coeff_index])
