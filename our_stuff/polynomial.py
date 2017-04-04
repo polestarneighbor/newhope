@@ -277,7 +277,7 @@ class Adversary:
             return coefficients
 
         def test_guess(guess):
-            test = self._public_key - (self._a * self._public_key)
+            test = self._public_key - (self._a * guess)
             # Test distribution of guess and test
             return False
 
