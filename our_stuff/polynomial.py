@@ -195,10 +195,7 @@ class Adversary:
         self._degree = degree
         self._accounting_for_errors = accounting_for_errors
         self._secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
-        error_coeffs = []
-        for i in range(degree):
-            error_coeffs.append(1)
-        self._error = Polynomial(coeffs=error_coeffs, degree=degree, mod=mod)
+        self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=mod)
         self._private_key = None
         self._public_key = None
         self._a = None
