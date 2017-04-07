@@ -28,13 +28,13 @@ def poly_tobytes(filename,poly):
     i+=1
   file1.close()
 
-def int_to_chr(num1):
+def int_to_bytes(num1):
   num1=num//256
   num2=num%256
-  return chr(num1)+chr(num2)
-def chr_to_int(chrs):
-  num1=ord(chrs[0])
-  num2=ord(chrs[1])
+  return bytes((num1,num2))
+def bytes_to_int(chrs):
+  num1=int(chrs[0])
+  num2=int(chrs[1])
   return num1*256+num2
 def poly_frombytes(filename):
   file1=open(filename,'r')
@@ -43,3 +43,18 @@ def poly_frombytes(filename):
   for i in range(0,PARAM_N*2,2):
      coeffs+=chr_to_int(contents[i:i+2])
   return Polynomial(coeffs=coeffs, degree=PARAM_N,mod=PARAM_Q)
+
+import subprocess
+from subprocess import PIPE
+def get_a():
+  signal=subprocess.run(['nh_computea'], stdout=PIPE)
+  poly=signal[:PARAM_N*2]
+  seed=signal[PARAM_N*2:]
+  return poly_frombytes(poly),seed
+
+def get_signal(seed,k):
+  coeffs=[0]*(PARAM_N-1)
+  coeffs+=[k]
+  polyA=poly_tobytes(Polynomial(coeffs=coeffs,mod=PARAM_Q,degree=PARAM_N))
+  sendA=polyA+seed
+  signal=subprocess.run(['nh_computesig'], stdout=PIPE, stdin=PIPE, input=sendA)
