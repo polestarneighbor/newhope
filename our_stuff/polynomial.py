@@ -58,6 +58,13 @@ class Polynomial:
         c = [(self.__coeffs[i]+other.__coeffs[i]) % self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
 
+    def __neg__(self):
+        c = [-i for i in self.coeffs]
+        return Polynomial(c, degree=self.degree, mod=self.mod)
+
+    def __sub__(self, other):
+        return self + (-other)
+
     def __truediv__(self,scalar):
         c = [(self.__coeffs[i]/scalar) % self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
@@ -65,6 +72,7 @@ class Polynomial:
     def __intdiv__(self,other):
         copy = [x for x in self.__coeffs]
         #implement long division here
+
     def __lt__(self,other):
         #based on most significant digit only
         #THIS IS ONLY A PARTIAL ORDERING
@@ -80,6 +88,7 @@ class Polynomial:
                 return True
             i-=1
         return False
+
     def __mul__(self, other):
         if type(other) == Polynomial:
             c = [0]*(self.degree+other.degree-1)  # least significant on the left
