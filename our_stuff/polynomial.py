@@ -174,16 +174,7 @@ class StatsAdversary:
         return self.error
 
     def key_and_signal(self, a, p, signal=None):
-<<<<<<< HEAD
-        poly = self.secret*p
-        if signal is None:
-            signal = poly.signal()
-        self.key = poly.mod2(signal)
-        return signal, self.secret*a+self.error
-=======
         pass
-
->>>>>>> origin/master
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
