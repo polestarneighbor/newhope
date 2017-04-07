@@ -119,7 +119,7 @@ class Polynomial:
     def signal(self):
         info_bits = []
         for coeff in self.__coeffs:
-            if abs(coeff)-1>self.mod//4:
+            if (abs(coeff)-1)>self.mod//4:
                 info_bits += [1]
             else:
                 info_bits += [0]
