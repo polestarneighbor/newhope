@@ -185,7 +185,6 @@ class StatsAdversary:
     def key_and_signal(self, a, p, signal=None):
         pass
 
-
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
         self._mod = mod
