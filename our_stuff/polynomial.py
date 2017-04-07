@@ -161,6 +161,7 @@ class KeyExchanger:
         self.key = poly.mod2(signal)
         return signal, self.secret*a+self.error
 
+
 class StatsAdversary:
     def __init__(self,degree=1024,mod=12889):
         self.mod=mod
@@ -168,9 +169,13 @@ class StatsAdversary:
         self.error = Polynomial(coeffs=[1]*degree,degree=degree,mod=mod)
         self.oppo_est=Polynomial(coeffs=[0]*degree,degree=degree,mod=mod)
         self.tries=0
+
     def sendP(self, a):
         return self.error
+
     def key_and_signal(self, a, p, signal=None):
+        pass
+
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
