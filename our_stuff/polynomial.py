@@ -58,6 +58,28 @@ class Polynomial:
         c = [(self.__coeffs[i]+other.__coeffs[i]) % self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
 
+    def __truediv__(self,scalar):
+        c = [(self.__coeffs[i]/scalar) % self.mod for i in range(self.degree)]
+        return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
+
+    def __intdiv__(self,other):
+        copy = [x for x in self.__coeffs]
+        #implement long division here
+    def __lt__(self,other):
+        #based on most significant digit only
+        #THIS IS ONLY A PARTIAL ORDERING
+        if self.mod!=other.mod:
+            return False
+        if self.degree!=other.degree:
+            return self.degree<other.degree
+        i=self.degree
+        while i>=0:
+            if self.degree!=0 and other.degree==0:
+                return False
+            if self.degree==0 and other.degree!=0:
+                return True
+            i-=1
+        return False
     def __mul__(self, other):
         if type(other) == Polynomial:
             c = [0]*(self.degree+other.degree-1)  # least significant on the left
@@ -83,7 +105,7 @@ class Polynomial:
             for i in range(len(self.__coeffs)):
                 self.__coeffs[i] *= other
                 self.__coeffs[i] % self.mod
-            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)        
+            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)
 
     def signal(self):
         info_bits = []
@@ -136,6 +158,16 @@ class KeyExchanger:
         self.key = poly.mod2(signal)
         return signal, self.secret*a+self.error
 
+class StatsAdversary:
+    def __init__(self,degree=1024,mod=12889):
+        self.mod=mod
+        self.degree=degree
+        self.error = Polynomial(coeffs=[1]*degree,degree=degree,mod=mod)
+        self.oppo_est=Polynomial(coeffs=[0]*degree,degree=degree,mod=mod)
+        self.tries=0
+    def sendP(self, a):
+        return self.error
+    def key_and_signal(self, a, p, signal=None):
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
