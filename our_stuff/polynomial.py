@@ -111,15 +111,15 @@ class Polynomial:
                 c = c[:truncate]
             return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
         else:
+            c = []
             for i in range(len(self.__coeffs)):
-                self.__coeffs[i] *= other
-                self.__coeffs[i] % self.mod
-            return Polynomial(coeffs=self.__coeffs, mod=self.mod, degree=self.degree)
+                c.append((self.__coeffs[i] * other) % self.mod)
+            return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
 
     def signal(self):
         info_bits = []
         for coeff in self.__coeffs:
-            if abs(coeff)-1>self.mod//4:
+            if abs(coeff)-1 > self.mod//4:
                 info_bits += [1]
             else:
                 info_bits += [0]
@@ -155,9 +155,12 @@ class Authority:
 
 
 class KeyExchanger:
-    def __init__(self, degree=1024, mod=12289):
+    def __init__(self, degree=1024, mod=12289, no_error=False):
         self.secret = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
-        self.error = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
+        if not no_error:
+            self.error = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
+        else:
+            self.error = Polynomial(sizelimit=0, degree=degree, mod=mod)
         self.key = None
 
     def sendP(self, a):
@@ -185,13 +188,17 @@ class StatsAdversary:
     def key_and_signal(self, a, p, signal=None):
         pass
 
+
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
         self._mod = mod
         self._degree = degree
         self._accounting_for_errors = accounting_for_errors
         self._secret = Polynomial(sizelimit=mod // 4, degree=degree, mod=12289)
-        self._error = Polynomial(coeffs=[1] * degree, degree=degree, mod=1)
+        error_coeffs = []
+        for i in range(degree):
+            error_coeffs.append(1)
+        self._error = Polynomial(coeffs=error_coeffs, degree=degree, mod=mod)
         self._private_key = None
         self._public_key = None
         self._a = None
