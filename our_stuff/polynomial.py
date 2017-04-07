@@ -288,7 +288,7 @@ class Adversary:
     def _attack_step_5(self):
         def create_guess():
             coefficients = []
-            for coefficient_number in self._coefficients_step1:
+            for coefficient_number in range(len(self._coefficients_step1)):
                 coefficients.append(self._coefficients_step1[coefficient_number])
 
             for coefficient_number in range(len(self._coefficients_step1)):
@@ -299,21 +299,21 @@ class Adversary:
                     comparison = operator.gt
 
                 if comparison(coefficients[coefficient_number], 0):
-                    coefficients.append(-self._coefficients_step1[coefficient_number-1])
+                    coefficients[coefficient_number-1] = -self._coefficients_step1[coefficient_number-1]
                 else:
-                    coefficients.append(self._coefficients_step1[coefficient_number-1])
+                    coefficients[coefficient_number-1] = self._coefficients_step1[coefficient_number-1]
 
                 # Set next coefficient
-                if self._same_signs_step3[coefficient_number+1]:
+                index = (coefficient_number + 1) % len(self._coefficients_step1)
+                if self._same_signs_step3[index]:
                     comparison = operator.lt
                 else:
                     comparison = operator.gt
 
-                index = (coefficient_number + 1) % len(self._coefficients_step1)
                 if comparison(coefficients[coefficient_number], 0):
-                    coefficients.append(-self._coefficients_step1[index])
+                    coefficients[index] = -self._coefficients_step1[index]
                 else:
-                    coefficients.append(self._coefficients_step1[index])
+                    coefficients[index] = self._coefficients_step1[index]
             return coefficients
 
         def test_guess(guess):
