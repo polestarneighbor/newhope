@@ -99,8 +99,11 @@ class Polynomial:
 
 
 class Authority:
-    def __init__(self, clientA=None, clientB=None, degree=1024, mod=12289):
-        self.a=Polynomial()
+    def __init__(self, clientA=None, clientB=None, degree=1024, mod=12289, a=None):
+        if a is None:
+            self.a = Polynomial(mod=mod, degree=degree)
+        else:
+            self.a = a
         if clientA is None:
             self.clientA=KeyExchanger(degree=degree, mod=mod)
         else:
