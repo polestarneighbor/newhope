@@ -121,8 +121,11 @@ class Polynomial:
 
 
 class Authority:
-    def __init__(self, clientA=None, clientB=None, degree=1024, mod=12289):
-        self.a=Polynomial()
+    def __init__(self, clientA=None, clientB=None, degree=1024, mod=12289, a=None):
+        if a is None:
+            self.a = Polynomial(mod=mod, degree=degree)
+        else:
+            self.a = a
         if clientA is None:
             self.clientA=KeyExchanger(degree=degree, mod=mod)
         else:
@@ -158,6 +161,7 @@ class KeyExchanger:
         self.key = poly.mod2(signal)
         return signal, self.secret*a+self.error
 
+
 class StatsAdversary:
     def __init__(self,degree=1024,mod=12889):
         self.mod=mod
@@ -165,14 +169,21 @@ class StatsAdversary:
         self.error = Polynomial(coeffs=[1]*degree,degree=degree,mod=mod)
         self.oppo_est=Polynomial(coeffs=[0]*degree,degree=degree,mod=mod)
         self.tries=0
+
     def sendP(self, a):
         return self.error
+
     def key_and_signal(self, a, p, signal=None):
+<<<<<<< HEAD
         poly = self.secret*p
         if signal is None:
             signal = poly.signal()
         self.key = poly.mod2(signal)
         return signal, self.secret*a+self.error
+=======
+        pass
+
+>>>>>>> origin/master
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
@@ -285,7 +296,7 @@ class Adversary:
     def _attack_step_5(self):
         def create_guess():
             coefficients = []
-            for coefficient_number in self._coefficients_step1:
+            for coefficient_number in range(len(self._coefficients_step1)):
                 coefficients.append(self._coefficients_step1[coefficient_number])
 
             for coefficient_number in range(len(self._coefficients_step1)):
@@ -296,21 +307,21 @@ class Adversary:
                     comparison = operator.gt
 
                 if comparison(coefficients[coefficient_number], 0):
-                    coefficients.append(-self._coefficients_step1[coefficient_number-1])
+                    coefficients[coefficient_number-1] = -self._coefficients_step1[coefficient_number-1]
                 else:
-                    coefficients.append(self._coefficients_step1[coefficient_number-1])
+                    coefficients[coefficient_number-1] = self._coefficients_step1[coefficient_number-1]
 
                 # Set next coefficient
-                if self._same_signs_step3[coefficient_number+1]:
+                index = (coefficient_number + 1) % len(self._coefficients_step1)
+                if self._same_signs_step3[index]:
                     comparison = operator.lt
                 else:
                     comparison = operator.gt
 
-                index = (coefficient_number + 1) % len(self._coefficients_step1)
                 if comparison(coefficients[coefficient_number], 0):
-                    coefficients.append(-self._coefficients_step1[index])
+                    coefficients[index] = -self._coefficients_step1[index]
                 else:
-                    coefficients.append(self._coefficients_step1[index])
+                    coefficients[index] = self._coefficients_step1[index]
             return coefficients
 
         def test_guess(guess):
