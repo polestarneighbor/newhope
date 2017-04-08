@@ -40,6 +40,12 @@ class Polynomial:
             coeff_strings.append(str(self.coeffs[coeff_number]) + "X^" + str(coeff_number))
         return " + ".join(coeff_strings)
 
+    def as_function(self, input_value):
+        output_value = 0
+        for coeff_number in range(len(self.coeffs)):
+            output_value += self.coeffs[coeff_number] * pow(input_value, coeff_number)
+        return output_value
+
     @property
     def coeffs(self):
         return self.__coeffs
@@ -339,7 +345,9 @@ class Adversary:
 
         def test_guess(guess):
             test = self._public_key - (self._a * guess)
-            # Test distribution of guess and test
+            samples = []
+            for sample_input in range(self._mod):
+                samples.append(test.as_function(sample_input))
             return False
 
         coefficients = create_guess()
