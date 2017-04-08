@@ -25,8 +25,9 @@ class Polynomial:
             while len(self.__coeffs) < degree:
                 self.__coeffs.append(random.randint(-sizelimit, sizelimit) % mod)
 
-        for index in range(len(self.__coeffs)):
-            self.__coeffs[index] %= mod
+        if coeffs is None:
+            for index in range(len(self.__coeffs)):
+                self.__coeffs[index] %= mod
         self.mod = mod
         self.degree = degree
 
@@ -155,8 +156,11 @@ class Authority:
 
 
 class KeyExchanger:
-    def __init__(self, degree=1024, mod=12289, no_error=False):
-        self.secret = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
+    def __init__(self, secret=None, degree=1024, mod=12289, no_error=False):
+        if secret is None:
+            self.secret = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
+        else:
+            self.secret = secret
         if not no_error:
             self.error = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
         else:
@@ -232,10 +236,6 @@ class Adversary:
         self._guess = self._attack_step_5()
         raise StopIteration
 
-    def _attack_step_1(self):
-        for k in range(self._mod):
-            yield k
-
     def _interpret_signal_changes(self):
         def basic_logic(list_of_changes):
             if len(list_of_changes) == 0:
@@ -282,11 +282,15 @@ class Adversary:
                 results.append(basic_logic(self._signal_values[cooeficient]))
             else:
                 results.append(error_accounting_logic(self._signal_values[cooeficient]))
-        self.signal_values = defaultdict(lambda: [])
+        self._signal_values = defaultdict(lambda: [])
         return results
 
+    def _attack_step_1(self):
+        for k in range(self._mod):
+            yield k
+
     def _attack_step_2(self):
-        poly_const = Polynomial([1, 1], degree=2, mod=1)
+        poly_const = Polynomial([1, 1], sizelimit=0, degree=self._degree, mod=self._mod)
         for k in range(self._mod):
             yield poly_const * k
 
@@ -294,7 +298,7 @@ class Adversary:
     def _attack_step_3(self):
         self._same_signs_step3 = [True] * self._degree
         # First pair
-        self._same_signs_step3[0] = True if self._coefficients_step2[0] != \
+        self._same_signs_step3[0] = True if self._coefficients_step2[0] == \
                                             self._coefficients_step1[0] + self._coefficients_step1[-1] else False
 
         # Remaining pairs
