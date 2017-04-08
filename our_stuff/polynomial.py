@@ -234,7 +234,7 @@ class Adversary:
 
     def _attack_step_1(self):
         for k in range(self._mod):
-            yield self._error * k
+            yield k
 
     def _interpret_signal_changes(self):
         def basic_logic(list_of_changes):
@@ -246,6 +246,10 @@ class Adversary:
                 if value != change:
                     value = change
                     number_of_changes += 1
+            # Check wrap around
+            if list_of_changes[0] != list_of_changes[-1]:
+                number_of_changes += 1
+
             return number_of_changes // 2
 
         def error_accounting_logic(list_of_changes):
@@ -267,7 +271,8 @@ class Adversary:
                         changes_in_a_row = 0
                     elif changes_in_a_row == 2:
                         changes_in_a_row = 0
-            return number_of_changes // 2
+
+                return number_of_changes // 2
 
         results = []
         cooeficients = list(self._signal_values.keys())
