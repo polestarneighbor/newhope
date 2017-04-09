@@ -348,7 +348,7 @@ class Adversary:
         def test_guess(guess):
             test = self._public_key - (self._a * guess)
             samples = []
-            for sample_input in numpy.arange(2 * self._mod, (2 * self._mod) / 2000):
+            for sample_input in numpy.arange(0, 2 * self._mod, step=(2 * self._mod) / 2000):
                 samples.append(test.as_function(sample_input))
             test_statistic, p_value = stats.shapiro(samples)
             return p_value < 0.05
