@@ -164,15 +164,12 @@ class Authority:
 
 
 class KeyExchanger:
-    def __init__(self, secret=None, degree=1024, mod=12289, no_error=False):
+    def __init__(self, secret=None, degree=1024, mod=12289):
         if secret is None:
             self.secret = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
         else:
             self.secret = secret
-        if not no_error:
-            self.error = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
-        else:
-            self.error = Polynomial(sizelimit=0, degree=degree, mod=mod)
+        self.error = Polynomial(sizelimit=mod//4, degree=degree, mod=mod)
         self.key = None
 
     def sendP(self, a):
