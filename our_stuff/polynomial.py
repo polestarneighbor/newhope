@@ -2,8 +2,10 @@
 # Imports
 # ######################################################################################################################
 from collections import defaultdict
+import numpy
 import operator
 import random
+from scipy import stats
 
 
 # ######################################################################################################################
@@ -346,9 +348,10 @@ class Adversary:
         def test_guess(guess):
             test = self._public_key - (self._a * guess)
             samples = []
-            for sample_input in range(self._mod):
+            for sample_input in numpy.arange(2 * self._mod, (2 * self._mod) / 2000):
                 samples.append(test.as_function(sample_input))
-            return False
+            test_statistic, p_value = stats.shapiro(samples)
+            return p_value < 0.05
 
         coefficients = create_guess()
         guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
