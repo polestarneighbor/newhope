@@ -1,45 +1,70 @@
 NEWHOPE_SEEDBYTES=32
 PARAM_Q=12289
 PARAM_N=1024
-def encode_a(filename, poly, seed):
-  poly_tobytes(filename,poly)
-  file1=open(filename,'a')
-  file1.write(seed)
-  file1.close()
+def encode_a(poly, seed):
+  s=poly_tobytes(filename,poly)
+  return s+seed
 
-def decode_a(filename):
-  p=poly_frombytes(filename)
-  with open('filename','r') as file1:
-    file1.read(PARAM_N*2)
-    seed=file1.read()
-  return p,seed
+def decode_a(senda):
+  p,ind =poly_frombytes(senda)
+  return p,senda[ind:]
+
+def poly_frombytes(a):
+    i=0
+    coeffs=[]
+    while i<PARAM_N//4:
+        coeffs[4*i+0] = a[7*i+0] | ((a[7*i+1]%2**16 & 0x3f) << 8)
+        coeffs[4*i+1] = (a[7*i+1] >> 6) | (((uint16_t)a[7*i+2]) << 2) | ((a[7*i+3]%2**16 & 0x0f) << 10)
+        coeffs[4*i+2] = (a[7*i+3] >> 4) | (((uint16_t)a[7*i+4]) << 4) | ((a[7*i+5]%2**16 & 0x03) << 12)
+        coeffs[4*i+3] = (a[7*i+5] >> 2) | (((uint16_t)a[7*i+6]) << 6)
+        i+=1
+    return Polynomial(coeffs=coeffs,mod=PARAM_Q,degree=PARAM_N,sizelimit=0)
+def poly_tobytes(p):
+    s+=''
+    for i in range(PARAM_N//4):
+      t0 = barrett_reduce(p.coeffs[4*i+0]) #Make sure that coefficients have only 14 bits
+      t1 = barrett_reduce(p.coeffs[4*i+1])
+      t2 = barrett_reduce(p.coeffs[4*i+2])
+      t3 = barrett_reduce(p.coeffs[4*i+3])
+
+      m = t0 - PARAM_Q
+      c = m
+      c >>= 15
+      t0 = m ^ ((t0^m)&c) # <Make sure that coefficients are in [0,q]
+
+      m = t1 - PARAM_Q
+      c = m
+      c >>= 15
+      t1 = m ^ ((t1^m)&c) // <Make sure that coefficients are in [0,q]
+
+      m = t2 - PARAM_Q
+      c = m
+      c >>= 15
+      t2 = m ^ ((t2^m)&c) // <Make sure that coefficients are in [0,q]
+
+      m = t3 - PARAM_Q
+      c = m
+      c >>= 15
+      t3 = m ^ ((t3^m)&c) // <Make sure that coefficients are in [0,q]
+
+      s+= chr(t0 & 0xff)
+      s+= chr((t0 >> 8) | (t1 << 6))
+      s+= chr((t1 >> 2))
+      s+= chr((t1 >> 10) | (t2 << 4))
+      s+= chr((t2 >> 4))
+      s+= chr((t2 >> 12) | (t3 << 2))
+      s+= chr((t3 >> 6))
+    return s
+
 
 def barrett_reduce(num):
-  u = int(num) * 5) >> 16;
+  u = (num * 5) >> 16;
   u *= PARAM_Q
   a -= u
   return a
 
-def poly_tobytes(filename,poly):
-  i=0
-  file1=open(filename,'w')
-  while i<poly.degree:
-    file1.write(int_to_chr(poly.coeffs[i]))
-    i+=1
-  file1.close()
-
-def int_to_bytes(num1):
-  num1=num//256
-  num2=num%256
-  return bytes((num1,num2))
-def bytes_to_int(chrs):
-  num1=int(chrs[0])
-  num2=int(chrs[1])
-  return num1*256+num2
-def poly_frombytes(filename):
-  file1=open(filename,'r')
+def poly_frombytes(contents):
   coeffs=[]
-  contents=filename.read(PARAM_N*2)
   for i in range(0,PARAM_N*2,2):
      coeffs+=chr_to_int(contents[i:i+2])
   return Polynomial(coeffs=coeffs, degree=PARAM_N,mod=PARAM_Q)

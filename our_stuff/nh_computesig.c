@@ -30,6 +30,7 @@
     pipe = open(senda_pipe, O_RDONLY);
     read(pipe, buf, MAX_BUF);
     close(pipe);
+    scanf("%s",senda);
 
     newhope_sharedb(key_b,sendb,senda)
 
@@ -41,6 +42,7 @@
     mkfifo(sendb_pipe, 0666);
 
     // write sendb to the FIFO
+    printf(sendb);
     pipe_b = open(sendb_pipe, O_WRONLY);
     write(pipe_b, sendb, sizeof(sendb));
     close(pipe_b);

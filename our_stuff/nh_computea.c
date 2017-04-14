@@ -36,6 +36,7 @@ int main(){
   pipe_a = open(senda_polya_pipe, O_WRONLY);
   write(pipe_a, senda, sizeof(senda));
   write(pipe_a, polya, sizeof(polya));
+  printf(senda);
   close(pipe_a);
 
   // remove the pipe

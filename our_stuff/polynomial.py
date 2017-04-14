@@ -11,6 +11,21 @@ from scipy import stats
 # ######################################################################################################################
 # Class Definitions
 # ######################################################################################################################
+def invert(num):
+    if num %12289==0:
+        return 0
+    mod=12289
+    x=num
+    inv=num
+    for i in range(12):
+        x=x**2%mod
+        inv*=x
+        inv%=12289
+    x=x**2%12289
+    x=x**2%12289
+    inv*=x
+    return inv%12289
+
 class Polynomial:
     def __init__(self, coeffs=None, sizelimit=None, degree=1024, mod=12289):
         if coeffs is None:
@@ -34,12 +49,15 @@ class Polynomial:
         self.degree = degree
 
     def __repr__(self):
-        return self.__coeffs
+        return str(self)
 
     def __str__(self):
         coeff_strings = []
         for coeff_number in range(len(self.coeffs)):
-            coeff_strings.append(str(self.coeffs[coeff_number]) + "X^" + str(coeff_number))
+            if self.coeffs[coeff_number]!=0:
+                coeff_strings.append(str(self.coeffs[coeff_number]) + "X^" + str(coeff_number))
+        if len(coeff_strings)==0:
+            return "0"
         return " + ".join(coeff_strings)
 
     def as_function(self, input_value):
@@ -77,11 +95,39 @@ class Polynomial:
     def __truediv__(self,scalar):
         c = [(self.__coeffs[i]/scalar) % self.mod for i in range(self.degree)]
         return Polynomial(coeffs=c, mod=self.mod, degree=self.degree)
-
-    def __intdiv__(self,other):
-        copy = [x for x in self.__coeffs]
+    def first_nonzero(self,lst=None):
+        if lst==None:
+            lst=self.coeffs
+        i=self.degree-1
+        while lst[i]==0 and i>0:
+            i-=1
+        return i
+    def __floordiv__(self,other):
+        rem=Polynomial(coeffs=self.coeffs,mod=self.mod,degree=self.degree)
+        quot=[]
+        done=False
+        while not done:
+            pos=rem.first_nonzero()
+            o_pos=other.first_nonzero()
+            if pos<o_pos:
+                done=True
+                continue
+            div=rem.coeffs[pos]*invert(other.coeffs[o_pos])%self.mod
+            part_quot=other*div
+            part_quot*=Polynomial(coeffs=[1 if i==pos-o_pos else 0 for i in range(self.degree)],mod=self.mod, degree=self.degree)
+            rem -= part_quot
+            quot+=[div]
+        return Polynomial(coeffs=quot, sizelimit=0,mod=self.mod, degree=self.degree), rem
         #implement long division here
-
+    def __eq__(self,other):
+        if self.mod!=other.mod:
+            return False
+        if self.degree!=other.degree:
+            return False
+        for i in range(self.degree):
+            if self.coeffs[i]!=other.coeffs[i]:
+                return False
+        return True
     def __lt__(self,other):
         #based on most significant digit only
         #THIS IS ONLY A PARTIAL ORDERING
@@ -190,13 +236,22 @@ class StatsAdversary:
         self.error = Polynomial(coeffs=[1]*degree,degree=degree,mod=mod)
         self.oppo_est=Polynomial(coeffs=[0]*degree,degree=degree,mod=mod)
         self.tries=0
+        self.secret=0
+        self.a=0
 
     def sendP(self, a):
+        self.a=a
         return self.error
 
     def key_and_signal(self, a, p, signal=None):
-        pass
-
+        self.a=a
+        self.oppo_est+=p
+        self.tries+=1
+        return p.signal(), self.error
+    def guess(self):
+        a_times_s=self.oppo_est/self.tries
+        secret_est, remainder=a_times_s//self.a
+        print( secret_est, remainder)
 
 class Adversary:
     def __init__(self, degree=1024, mod=12289, accounting_for_errors=False):
