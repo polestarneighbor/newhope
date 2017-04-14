@@ -106,9 +106,13 @@ class Polynomial:
         rem=Polynomial(coeffs=self.coeffs,mod=self.mod,degree=self.degree)
         quot=[]
         done=False
-        while not done:
+        i=0
+        while not done and i<1024:
+            i+=1
             pos=rem.first_nonzero()
             o_pos=other.first_nonzero()
+            if i==1024:
+                print("hit end")
             if pos<o_pos:
                 done=True
                 continue
@@ -250,6 +254,7 @@ class StatsAdversary:
         return p.signal(), self.error
     def guess(self):
         a_times_s=self.oppo_est/self.tries
+        return (a_times_s,self.a)
         secret_est, remainder=a_times_s//self.a
         print( secret_est, remainder)
 
