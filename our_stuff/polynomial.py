@@ -26,6 +26,7 @@ def invert(num):
     inv*=x
     return inv%12289
 
+
 class Polynomial:
     def __init__(self, coeffs=None, sizelimit=None, degree=1024, mod=12289):
         if coeffs is None:
@@ -59,6 +60,14 @@ class Polynomial:
         if len(coeff_strings)==0:
             return "0"
         return " + ".join(coeff_strings)
+
+    @property
+    def gaussian(self):
+        samples = []
+        for sample_input in numpy.arange(0, self.mod, step=self.mod / 4000):
+            samples.append(self.as_function(sample_input))
+        test_statistic, p_value = stats.shapiro(samples)
+        return p_value > 0.05
 
     def as_function(self, input_value):
         output_value = 0
@@ -402,22 +411,20 @@ class Adversary:
                     coefficients[index] = self._coefficients_step1[index]
             return coefficients
 
-        def test_guess(guess):
-            test = self._public_key - (self._a * guess)
-            samples = []
-            for sample_input in numpy.arange(0, 2 * self._mod, step=(2 * self._mod) / 2000):
-                samples.append(test.as_function(sample_input))
-            test_statistic, p_value = stats.shapiro(samples)
-            return p_value < 0.05
-
         coefficients = create_guess()
         guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
-        if test_guess(guess):
+        test = self._public_key - (self._a * guess)
+        if test.gaussian:
             return guess
         else:
             for coefficient_number in range(len(coefficients)):
                 coefficients[coefficient_number] = -coefficients[coefficient_number]
-            return Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
+            guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
+            test = self._public_key - (self._a * guess)
+            if test.gaussian:
+                return guess
+            else:
+                raise RuntimeError("Unable to find solution!")
 
     def key_and_signal(self, a, p, signal=None):
         self._public_key = p
