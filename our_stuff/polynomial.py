@@ -55,16 +55,16 @@ class Polynomial:
     def __str__(self):
         coeff_strings = []
         for coeff_number in range(len(self.coeffs)):
-            if self.coeffs[coeff_number]!=0:
+            if self.coeffs[coeff_number] != 0:
                 coeff_strings.append(str(self.coeffs[coeff_number]) + "X^" + str(coeff_number))
-        if len(coeff_strings)==0:
+        if len(coeff_strings) == 0:
             return "0"
         return " + ".join(coeff_strings)
 
     @property
     def gaussian(self):
         samples = []
-        for sample_input in numpy.arange(0, self.mod, step=self.mod / 4000):
+        for sample_input in numpy.arange(-self.mod, self.mod, step=self.mod / 2000):
             samples.append(self.as_function(sample_input))
         test_statistic, p_value = stats.shapiro(samples)
         return p_value > 0.05
@@ -345,8 +345,7 @@ class Adversary:
                         changes_in_a_row = 0
                     elif changes_in_a_row == 2:
                         changes_in_a_row = 0
-
-                return number_of_changes // 2
+            return number_of_changes // 2
 
         results = []
         cooeficients = list(self._signal_values.keys())
