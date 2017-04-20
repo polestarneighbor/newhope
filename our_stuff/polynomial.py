@@ -232,7 +232,7 @@ class KeyExchanger:
         self.key = None
 
     def sendP(self, a):
-        return self.secret*a+self.error
+        return self.secret*a + (self.error*2)
 
     def key_and_signal(self, a, p, signal=None):
         poly = self.secret*p
