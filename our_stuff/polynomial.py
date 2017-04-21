@@ -239,7 +239,7 @@ class KeyExchanger:
         if signal is None:
             signal = poly.signal()
         self.key = poly.mod2(signal)
-        return signal, self.secret*a+self.error
+        return signal, self.secret*a+(self.error*2)
 
 
 class StatsAdversary:
