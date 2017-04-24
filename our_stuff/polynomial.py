@@ -69,6 +69,32 @@ class Polynomial:
         test_statistic, p_value = stats.shapiro(samples)
         return p_value > 0.05
 
+    def all_related_polynomials(self):
+        cooefficients = []
+
+        # First degree
+        for coefficent_group in range(int(pow(self.mod, self.degree))):
+            for coefficent in self.all_cooefficients():
+                cooefficients.append([coefficent])
+
+        # The rest
+        for degree in range(1, self.degree):
+            index = 0
+            while index < len(cooefficients):
+                for coefficent in self.all_cooefficients():
+                    for coefficent_group2 in range(int(pow(self.mod, degree))):
+                        cooefficients[index].append(coefficent)
+                        index += 1
+
+        for index in range(len(cooefficients)):
+            cooefficients[index] = Polynomial(cooefficients[index], mod=self.mod, degree=self.degree)
+
+        return cooefficients
+
+    def all_cooefficients(self):
+        for coefficient in range(-self.mod//2, (self.mod//2)+1):
+            yield coefficient
+
     def as_function(self, input_value):
         output_value = 0
         for coeff_number in range(len(self.coeffs)):
