@@ -76,6 +76,13 @@ class Polynomial:
         p_value = self.gaussian_probability_function() / all_polynomials_sum
         return p_value > 0.05
 
+    def gaussian_not_rigorus(self):
+        number_coeffs_that_are_negitive = 0
+        for coeff in self.coeffs:
+            if coeff - (self.mod/2) < 0:
+                number_coeffs_that_are_negitive += 1
+        return abs(len(self.coeffs) - number_coeffs_that_are_negitive) <= 1
+
     def gaussian_probability_function(self, s=1, c=0):
         return numpy.power(1/(numpy.sqrt(2*numpy.pi*s*s)), self.mod) \
                * numpy.power(numpy.e, -numpy.power(self.magnitude, 2)/(2 * s * s))
@@ -457,7 +464,7 @@ class Adversary:
         coefficients = create_guess()
         guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
         test = self._public_key - (self._a * guess)
-        if test.gaussian():
+        if test.gaussian_not_rigorus():
             return guess
         else:
             for coefficient_number in range(len(coefficients)):
