@@ -61,13 +61,31 @@ class Polynomial:
             return "0"
         return " + ".join(coeff_strings)
 
-    @property
-    def gaussian(self):
+    def gaussian_shapiro_sampling(self):
         samples = []
         for sample_input in numpy.arange(-self.mod, self.mod, step=self.mod / 2000):
             samples.append(self.as_function(sample_input))
         test_statistic, p_value = stats.shapiro(samples)
         return p_value > 0.05
+
+    def gaussian(self):
+        all_polynomials_list = self.all_related_polynomials()
+        all_polynomials_sum = 0
+        for poly in all_polynomials_list:
+            all_polynomials_sum += poly.gaussian_probability_function()
+        p_value = self.gaussian_probability_function() / all_polynomials_sum
+        return p_value > 0.05
+
+    def gaussian_probability_function(self, s=1, c=0):
+        return numpy.power(1/(numpy.sqrt(2*numpy.pi*s*s)), self.mod) \
+               * numpy.power(numpy.e, -numpy.power(self.magnitude, 2)/(2 * s * s))
+
+    @property
+    def magnitude(self):
+        sum = 0
+        for coeff in self.coeffs:
+            sum += coeff * coeff
+        return numpy.sqrt(sum)
 
     def all_related_polynomials(self):
         cooefficients = []
@@ -439,7 +457,7 @@ class Adversary:
         coefficients = create_guess()
         guess = Polynomial(coeffs=coefficients, degree=self._degree, mod=self._mod)
         test = self._public_key - (self._a * guess)
-        if test.gaussian:
+        if test.gaussian():
             return guess
         else:
             for coefficient_number in range(len(coefficients)):
