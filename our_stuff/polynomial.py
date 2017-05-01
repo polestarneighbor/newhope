@@ -487,3 +487,13 @@ class Adversary:
             signal = poly.signal()
         self._private_key = poly.mod2(signal)
         return poly.signal(), self._secret * a + self._error
+
+if __name__ == '__main__':
+    auth = Authority(clientA=Adversary())
+    try:
+        while True:
+            auth.runExchange()
+    except StopIteration:
+        print("ClientB Secret: " + str(auth.clientB.secret))
+        print("Adversary  Guess: " + str(auth.clientA.guess))
+        print("Equal: " + str(auth.clientB.secret == auth.clientA.guess))
